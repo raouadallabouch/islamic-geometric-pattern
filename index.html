@@ -1,0 +1,731 @@
+<!-- 
+    Islamic Geometric Pattern
+    -----------------------------------------------------
+    A Procedural Islamic Geometric Pattern
+    Based on Hankin's "Polygons in Contact" Algorithm.
+    
+    Author: Raouad Allabouch
+    Copyright (c) 2025 Raouad Allabouch. All rights reserved.
+    
+    This source code is licensed for the GitHub repository 
+    of Raouad Allabouch.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Islamic Star Pattern | Raouad Allabouch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for UI elements -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0f172a; /* Slate 900 */
+            font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        canvas {
+            display: block;
+            touch-action: none; /* Prevent scrolling on mobile while interacting */
+        }
+        
+        /* --- Floating Toggle Button --- */
+        .fab {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            width: 50px;
+            height: 50px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #fbbf24;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+        }
+        .fab:hover {
+            background: rgba(15, 23, 42, 1);
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 0 25px rgba(251, 191, 36, 0.3);
+        }
+
+        /* --- Settings Panel --- */
+        .overlay {
+            position: absolute;
+            bottom: 90px;
+            left: 24px;
+            width: 340px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            
+            /* Glassmorphism */
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            
+            padding: 1.5rem;
+            color: #e2e8f0;
+            
+            /* Animation State: Hidden */
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            pointer-events: none;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 100;
+
+            /* Hide Scrollbar */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .overlay::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Animation State: Visible */
+        .overlay.open {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+            visibility: visible;
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 480px) {
+            .overlay {
+                width: calc(100% - 48px); /* Full width minus margin */
+                left: 24px;
+                bottom: 90px;
+                padding: 1.25rem;
+            }
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .panel-header h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #fbbf24, #d97706);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.05em;
+        }
+
+        .close-btn {
+            cursor: pointer;
+            color: #94a3b8;
+            transition: all 0.2s;
+            padding: 4px;
+            border-radius: 50%;
+        }
+        .close-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.02em;
+        }
+        
+        .value-badge {
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 3px 8px;
+            border-radius: 6px;
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        /* --- Footer Watermark --- */
+        .watermark-footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+        }
+        .watermark-footer span {
+            color: #94a3b8;
+        }
+
+        /* --- Slider Styling --- */
+        .slider-wrapper {
+            position: relative;
+            width: 100%;
+            height: 28px;
+            display: flex;
+            align-items: center;
+        }
+
+        .initial-marker {
+            position: absolute;
+            top: 50%;
+            width: 6px;
+            height: 6px;
+            background-color: #f59e0b;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.6;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none; 
+            width: 100%;
+            background: transparent;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            transition: background 0.2s;
+        }
+        input[type=range]:hover::-webkit-slider-runnable-track {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #0f172a;
+            border: 2px solid #fbbf24;
+            margin-top: -7px;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #fbbf24;
+        }
+        
+        input[type=range]:active::-webkit-slider-thumb {
+            transform: scale(0.9);
+            background: #fbbf24;
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #2dd4bf; /* Teal 400 */
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin: 1.5rem 0 1rem 0;
+            opacity: 0.9;
+        }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+    
+    <!-- Floating Toggle Button -->
+    <div class="fab" id="settings-toggle">
+        <i data-lucide="settings" size="24"></i>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="overlay" id="settings-panel">
+        <div class="panel-header">
+            <h1>ISLAMIC STAR PATTERN</h1>
+            <div class="close-btn" id="close-panel">
+                <i data-lucide="x" size="20"></i>
+            </div>
+        </div>
+        
+        <div class="section-title">Geometry</div>
+
+        <!-- Grid Size Slider -->
+        <div class="control-group">
+            <label>
+                <span>Grid Density</span>
+                <span class="value-badge" id="val-size">85</span>
+            </label>
+            <div class="slider-wrapper">
+                <input type="range" id="slider-size" min="40" max="200" value="85" data-key="gridSize">
+            </div>
+        </div>
+
+        <!-- Angle Slider -->
+        <div class="control-group">
+            <label>
+                <span>Star Angle</span>
+                <span class="value-badge" id="val-angle">60°</span>
+            </label>
+            <div class="slider-wrapper">
+                <input type="range" id="slider-angle" min="15" max="85" value="60" data-key="angle">
+            </div>
+        </div>
+
+        <!-- Delta / Offset Slider -->
+        <div class="control-group">
+            <label>
+                <span>Delta Offset</span>
+                <span class="value-badge" id="val-delta">0</span>
+            </label>
+            <div class="slider-wrapper">
+                <input type="range" id="slider-delta" min="0" max="40" value="0" data-key="delta">
+            </div>
+        </div>
+
+        <div class="section-title">Interactive Physics</div>
+
+        <!-- Mouse Radius -->
+        <div class="control-group">
+            <label>
+                <span>Interact Radius</span>
+                <span class="value-badge" id="val-radius">80</span>
+            </label>
+            <div class="slider-wrapper">
+                <input type="range" id="slider-radius" min="20" max="300" value="80" data-key="mouseRadius">
+            </div>
+        </div>
+
+        <!-- Spring Strength -->
+        <div class="control-group">
+            <label>
+                <span>Spring Force</span>
+                <span class="value-badge" id="val-spring">0.05</span>
+            </label>
+            <div class="slider-wrapper">
+                <input type="range" id="slider-spring" min="0.01" max="0.3" step="0.01" value="0.05" data-key="spring">
+            </div>
+        </div>
+
+        <!-- Friction -->
+        <div class="control-group">
+            <label>
+                <span>Friction</span>
+                <span class="value-badge" id="val-friction">0.7</span>
+            </label>
+            <div class="slider-wrapper">
+                <input type="range" id="slider-friction" min="0.50" max="0.99" step="0.01" value="0.7" data-key="friction">
+            </div>
+        </div>
+
+        <!-- Repulsion -->
+        <div class="control-group">
+            <label>
+                <span>Repulsion</span>
+                <span class="value-badge" id="val-repulsion">15</span>
+            </label>
+            <div class="slider-wrapper">
+                <input type="range" id="slider-repulsion" min="1" max="50" value="15" data-key="repulsion">
+            </div>
+        </div>
+
+        <!-- Visible Watermark (UI) -->
+        <div class="watermark-footer">
+            Designed & Developed by <br>
+            <span>Raouad Allabouch</span>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Invisible Watermark (Console Signature) ---
+        console.log(
+            "%c Islamic Star Pattern \n%c Crafted by Raouad Allabouch ",
+            "background: #fbbf24; color: #000; font-weight: bold; padding: 4px 8px; border-radius: 4px 0 0 4px;",
+            "background: #0f172a; color: #fbbf24; padding: 4px 8px; border-radius: 0 4px 4px 0; border: 1px solid #fbbf24;"
+        );
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // UI Interaction Logic
+        const settingsToggle = document.getElementById('settings-toggle');
+        const settingsPanel = document.getElementById('settings-panel');
+        const closePanel = document.getElementById('close-panel');
+
+        function togglePanel() {
+            settingsPanel.classList.toggle('open');
+        }
+
+        settingsToggle.addEventListener('click', togglePanel);
+        closePanel.addEventListener('click', togglePanel);
+
+        // Canvas Logic
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+
+        let width, height;
+        let nodes = [];
+        let edges = [];
+        
+        // Configuration with Requested Defaults
+        const config = {
+            gridSize: 85,
+            angle: 60,
+            delta: 0,
+            mouseRadius: 80,
+            spring: 0.05,
+            friction: 0.7,
+            repulsion: 15,
+            baseColor: 'rgba(94, 234, 212, 0.3)',
+            activeColor: 'rgba(251, 191, 36, 1)'
+        };
+
+        const defaults = { ...config };
+
+        // UI References
+        const uiElements = {
+            gridSize: { slider: document.getElementById('slider-size'), label: document.getElementById('val-size'), type: 'geo' },
+            angle: { slider: document.getElementById('slider-angle'), label: document.getElementById('val-angle'), type: 'geo', suffix: '°' },
+            delta: { slider: document.getElementById('slider-delta'), label: document.getElementById('val-delta'), type: 'geo' },
+            mouseRadius: { slider: document.getElementById('slider-radius'), label: document.getElementById('val-radius'), type: 'phys' },
+            spring: { slider: document.getElementById('slider-spring'), label: document.getElementById('val-spring'), type: 'phys' },
+            friction: { slider: document.getElementById('slider-friction'), label: document.getElementById('val-friction'), type: 'phys' },
+            repulsion: { slider: document.getElementById('slider-repulsion'), label: document.getElementById('val-repulsion'), type: 'phys' }
+        };
+
+        let mouse = { x: -1000, y: -1000 };
+
+        // --- Init Magnetic Markers ---
+        function initMarkers() {
+            Object.keys(uiElements).forEach(key => {
+                const el = uiElements[key].slider;
+                const min = parseFloat(el.min);
+                const max = parseFloat(el.max);
+                const val = defaults[key];
+                
+                const percent = ((val - min) / (max - min)) * 100;
+                
+                const marker = document.createElement('div');
+                marker.className = 'initial-marker';
+                // Adjust position slightly to account for thumb width visual alignment
+                marker.style.left = `calc(${percent}% + (${9 - percent * 0.18}px))`; 
+                
+                el.parentElement.appendChild(marker);
+            });
+        }
+        
+        initMarkers();
+
+        class Node {
+            constructor(x, y) {
+                this.originX = x;
+                this.originY = y;
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+            }
+
+            update() {
+                const dxOrigin = this.originX - this.x;
+                const dyOrigin = this.originY - this.y;
+                this.vx += dxOrigin * config.spring;
+                this.vy += dyOrigin * config.spring;
+
+                const dxMouse = this.x - mouse.x;
+                const dyMouse = this.y - mouse.y;
+                
+                // Optimized distance check
+                if (Math.abs(dxMouse) < config.mouseRadius && Math.abs(dyMouse) < config.mouseRadius) {
+                    const distSq = dxMouse * dxMouse + dyMouse * dyMouse;
+                    const radiusSq = config.mouseRadius * config.mouseRadius;
+                    
+                    if (distSq < radiusSq) {
+                        const dist = Math.sqrt(distSq);
+                        const force = (config.mouseRadius - dist) / config.mouseRadius;
+                        const angle = Math.atan2(dyMouse, dxMouse);
+                        
+                        this.vx += Math.cos(angle) * force * config.repulsion;
+                        this.vy += Math.sin(angle) * force * config.repulsion;
+                    }
+                }
+
+                this.vx *= config.friction;
+                this.vy *= config.friction;
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+        }
+
+        function intersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+            const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+            if (denom === 0) return null;
+            const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
+            return { x: x1 + ua * (x2 - x1), y: y1 + ua * (y2 - y1) };
+        }
+
+        function init() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            nodes = [];
+            edges = [];
+
+            const s = config.gridSize;
+            // Pad cols/rows slightly to ensure edges are filled
+            const cols = Math.ceil(width / s) + 1;
+            const rows = Math.ceil(height / s) + 1;
+            
+            const angleRad = (config.angle * Math.PI) / 180;
+            const offset = config.delta;
+
+            for (let i = -1; i < cols; i++) {
+                for (let j = -1; j < rows; j++) {
+                    const x = i * s;
+                    const y = j * s;
+                    
+                    const topContactRight = { x: x + s/2 + offset, y: y };
+                    const topContactLeft  = { x: x + s/2 - offset, y: y };
+                    const rightContactBottom = { x: x + s, y: y + s/2 + offset };
+                    const rightContactTop    = { x: x + s, y: y + s/2 - offset };
+                    const bottomContactLeft  = { x: x + s/2 - offset, y: y + s };
+                    const bottomContactRight = { x: x + s/2 + offset, y: y + s };
+                    const leftContactTop     = { x: x, y: y + s/2 - offset };
+                    const leftContactBottom  = { x: x, y: y + s/2 + offset };
+
+                    const nTR_Top = new Node(topContactRight.x, topContactRight.y);
+                    const nTR_Right = new Node(rightContactTop.x, rightContactTop.y);
+                    const nBR_Right = new Node(rightContactBottom.x, rightContactBottom.y);
+                    const nBR_Bottom = new Node(bottomContactRight.x, bottomContactRight.y);
+                    const nBL_Bottom = new Node(bottomContactLeft.x, bottomContactLeft.y);
+                    const nBL_Left = new Node(leftContactBottom.x, leftContactBottom.y);
+                    const nTL_Left = new Node(leftContactTop.x, leftContactTop.y);
+                    const nTL_Top = new Node(topContactLeft.x, topContactLeft.y);
+
+                    nodes.push(nTR_Top, nTR_Right, nBR_Right, nBR_Bottom, nBL_Bottom, nBL_Left, nTL_Left, nTL_Top);
+
+                    const rayLen = 2000;
+
+                    // Hankin's method intersection logic
+                    // 1. Top-Right
+                    const a1 = Math.PI/2 - angleRad;
+                    const a2 = Math.PI + angleRad; 
+                    const pTR = intersect(
+                        nTR_Top.x, nTR_Top.y, nTR_Top.x + Math.cos(a1)*rayLen, nTR_Top.y + Math.sin(a1)*rayLen,
+                        nTR_Right.x, nTR_Right.y, nTR_Right.x + Math.cos(a2)*rayLen, nTR_Right.y + Math.sin(a2)*rayLen
+                    );
+                    if (pTR) {
+                        const nCenter = new Node(pTR.x, pTR.y);
+                        nodes.push(nCenter);
+                        edges.push([nTR_Top, nCenter]);
+                        edges.push([nTR_Right, nCenter]);
+                    }
+
+                    // 2. Bottom-Right
+                    const a3 = Math.PI - angleRad;
+                    const a4 = -Math.PI/2 + angleRad; 
+                    const pBR = intersect(
+                        nBR_Right.x, nBR_Right.y, nBR_Right.x + Math.cos(a3)*rayLen, nBR_Right.y + Math.sin(a3)*rayLen,
+                        nBR_Bottom.x, nBR_Bottom.y, nBR_Bottom.x + Math.cos(a4)*rayLen, nBR_Bottom.y + Math.sin(a4)*rayLen
+                    );
+                    if (pBR) {
+                        const nCenter = new Node(pBR.x, pBR.y);
+                        nodes.push(nCenter);
+                        edges.push([nBR_Right, nCenter]);
+                        edges.push([nBR_Bottom, nCenter]);
+                    }
+
+                    // 3. Bottom-Left
+                    const a5 = -Math.PI/2 - angleRad;
+                    const a6 = 0 + angleRad;
+                    const pBL = intersect(
+                        nBL_Bottom.x, nBL_Bottom.y, nBL_Bottom.x + Math.cos(a5)*rayLen, nBL_Bottom.y + Math.sin(a5)*rayLen,
+                        nBL_Left.x, nBL_Left.y, nBL_Left.x + Math.cos(a6)*rayLen, nBL_Left.y + Math.sin(a6)*rayLen
+                    );
+                    if (pBL) {
+                        const nCenter = new Node(pBL.x, pBL.y);
+                        nodes.push(nCenter);
+                        edges.push([nBL_Bottom, nCenter]);
+                        edges.push([nBL_Left, nCenter]);
+                    }
+
+                    // 4. Top-Left
+                    const a7 = 0 - angleRad;
+                    const a8 = Math.PI/2 + angleRad;
+                    const pTL = intersect(
+                        nTL_Left.x, nTL_Left.y, nTL_Left.x + Math.cos(a7)*rayLen, nTL_Left.y + Math.sin(a7)*rayLen,
+                        nTL_Top.x, nTL_Top.y, nTL_Top.x + Math.cos(a8)*rayLen, nTL_Top.y + Math.sin(a8)*rayLen
+                    );
+                    if (pTL) {
+                        const nCenter = new Node(pTL.x, pTL.y);
+                        nodes.push(nCenter);
+                        edges.push([nTL_Left, nCenter]);
+                        edges.push([nTL_Top, nCenter]);
+                    }
+                }
+            }
+        }
+
+        // --- Magnetic Logic & Updates ---
+        function handleUpdate(e) {
+            const input = e.target;
+            const key = input.dataset.key;
+            const meta = uiElements[key];
+            
+            // Magnetic Snap Logic
+            let val = parseFloat(input.value);
+            const def = defaults[key];
+            const min = parseFloat(input.min);
+            const max = parseFloat(input.max);
+            const range = max - min;
+            const threshold = range * 0.05; // 5% snap radius
+
+            if (Math.abs(val - def) < threshold) {
+                val = def;
+                input.value = def; // visually snap slider
+            }
+
+            // Update Config
+            config[key] = val;
+
+            // Update UI Label
+            meta.label.textContent = val + (meta.suffix || '');
+
+            // Re-init if geometry changed
+            if (meta.type === 'geo') {
+                init();
+            }
+        }
+
+        // Add listeners to all sliders
+        Object.values(uiElements).forEach(el => {
+            el.slider.addEventListener('input', handleUpdate);
+        });
+
+        function animate() {
+            ctx.fillStyle = '#0f172a'; 
+            ctx.fillRect(0, 0, width, height);
+
+            for (let i = 0; i < nodes.length; i++) {
+                nodes[i].update();
+            }
+
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.strokeStyle = config.baseColor;
+            
+            const activeEdges = [];
+
+            // Batch rendering
+            for (let i = 0; i < edges.length; i++) {
+                const e = edges[i];
+                const p1 = e[0];
+                const p2 = e[1];
+
+                // Fast approximate distance check (Manhattan distance)
+                const d1 = Math.abs(p1.x - p1.originX) + Math.abs(p1.y - p1.originY);
+                const d2 = Math.abs(p2.x - p2.originX) + Math.abs(p2.y - p2.originY);
+                
+                if (d1 + d2 > 0.5) {
+                    activeEdges.push({ p1, p2, distortion: d1 + d2 });
+                } else {
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                }
+            }
+            ctx.stroke();
+
+            // Render Active Edges
+            if (activeEdges.length > 0) {
+                for (let i = 0; i < activeEdges.length; i++) {
+                    const e = activeEdges[i];
+                    const alpha = Math.min(e.distortion / 8, 1); 
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(e.p1.x, e.p1.y);
+                    ctx.lineTo(e.p2.x, e.p2.y);
+                    ctx.strokeStyle = `rgba(251, 191, 36, ${alpha})`;
+                    ctx.stroke();
+                }
+            }
+
+            // Render Active Nodes
+            ctx.beginPath();
+            ctx.fillStyle = '#fbbf24';
+            let hasActiveNodes = false;
+            
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
+                if (Math.abs(node.x - node.originX) > 0.5 || Math.abs(node.y - node.originY) > 0.5) {
+                    ctx.moveTo(node.x + 2, node.y); 
+                    ctx.arc(node.x, node.y, 2, 0, Math.PI * 2);
+                    hasActiveNodes = true;
+                }
+            }
+            if (hasActiveNodes) {
+                ctx.fill();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // --- Event Listeners ---
+        
+        // Mouse Move
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        // Touch Move (Mobile Support)
+        window.addEventListener('touchmove', (e) => {
+            // Prevent default to stop scrolling while interacting with canvas
+            if(e.target === canvas) e.preventDefault();
+            const touch = e.touches[0];
+            mouse.x = touch.clientX;
+            mouse.y = touch.clientY;
+        }, { passive: false });
+
+        window.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            mouse.x = touch.clientX;
+            mouse.y = touch.clientY;
+        });
+
+        window.addEventListener('resize', init);
+        
+        init();
+        animate();
+
+    </script>
+</body>
+</html>
