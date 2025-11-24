@@ -12,9 +12,7 @@ Customizable: Adjust the star angles and physics parameters (friction, tension) 
 
 Responsive: Fully optimized for desktop and mobile touch interaction.
 
-🚀 Live Demo
 
-[Link to your GitHub Page will go here]
 
 🛠️ How it Works
 
